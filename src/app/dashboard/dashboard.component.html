@@ -1,0 +1,102 @@
+<div class="dashboard">
+
+  <!-- Header -->
+  <header class="dash-header">
+    <div class="header-brand">
+      <span class="brand-icon">◈</span>
+      <div>
+        <h1>Demand Forecaster</h1>
+        <p class="brand-sub">Linear Regression · Scikit-learn · Flask · Angular</p>
+      </div>
+    </div>
+    <div class="header-controls">
+      <div class="control-group">
+        <label for="productSelect">Product</label>
+        <select id="productSelect" [value]="selectedProduct"
+                (change)="onProductChange($any($event.target).value)">
+          <option *ngFor="let p of products" [value]="p">{{ p }}</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label for="monthsSelect">Forecast Horizon</label>
+        <select id="monthsSelect" [value]="forecastMonths"
+                (change)="onMonthsChange(+$any($event.target).value)">
+          <option [value]="1">1 month</option>
+          <option [value]="3">3 months</option>
+          <option [value]="6">6 months</option>
+          <option [value]="12">12 months</option>
+        </select>
+      </div>
+      <button class="btn-refresh" (click)="loadData()" [disabled]="loading">
+        <span *ngIf="!loading">↻ Refresh</span>
+        <span *ngIf="loading">Loading…</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Error -->
+  <div class="error-banner" *ngIf="error">
+    <span class="err-icon">⚠</span> {{ error }}
+  </div>
+
+  <!-- Stat Cards -->
+  <section class="stat-grid" *ngIf="data && !loading">
+    <div class="stat-card">
+      <p class="stat-label">Model Accuracy (R²)</p>
+      <p class="stat-value accent-green">{{ rSquaredPct }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">Historical Units Sold</p>
+      <p class="stat-value">{{ totalHistoricalQty | number }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">Forecasted Units ({{ forecastMonths }}mo)</p>
+      <p class="stat-value accent-pink">{{ forecastedTotal | number }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">Monthly Growth (slope)</p>
+      <p class="stat-value accent-blue">+{{ data.model_stats.slope | number:'1.1-1' }} units</p>
+    </div>
+  </section>
+
+  <!-- Chart -->
+  <section class="chart-card" *ngIf="!error">
+    <div class="chart-title-row">
+      <h2>Sales Trend &amp; Forecast &mdash; <em>{{ selectedProduct }}</em></h2>
+      <span class="chart-badge" *ngIf="data">R² {{ rSquaredPct }}</span>
+    </div>
+    <div class="chart-skeleton" *ngIf="loading">
+      <div class="skeleton-bar" *ngFor="let b of skeletonBars"
+           [style.height.%]="15 + b * 9"></div>
+    </div>
+    <div class="chart-wrapper" *ngIf="!loading">
+      <canvas #salesChart></canvas>
+    </div>
+  </section>
+
+  <!-- Forecast Table -->
+  <section class="table-card" *ngIf="data && !loading && data.forecast.length">
+    <h3>Forecast Detail</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th>Predicted Quantity</th>
+          <th>vs Last Actual</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let f of data.forecast">
+          <td class="mono">{{ f.date }}</td>
+          <td class="mono accent-pink">{{ f.predicted_qty | number:'1.0-0' }}</td>
+          <td class="mono"
+              [class.positive]="f.predicted_qty > lastActualQty"
+              [class.negative]="f.predicted_qty <= lastActualQty">
+            {{ (f.predicted_qty - lastActualQty) | number:'+1.0-0' }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+</div>
